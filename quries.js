@@ -7,7 +7,7 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var connectionString = cs.connection;
+var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
 function getHosts(req, res, next) {
