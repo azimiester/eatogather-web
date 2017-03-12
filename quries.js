@@ -1,6 +1,7 @@
 var promise = require('bluebird');
 var cs = require('./connectionString');
 var statics = require('./statics');
+var jwt = require('jsonwebtoken');
 
 var options = {
   promiseLib: promise
@@ -46,17 +47,22 @@ function setUser(req, res, next){
 			data: user[key] +"No shit motherfucker."
 		});
 	}
-	db.one('insert into hmfs(username, password, gender, email, first_name, last_name) values ($1, $2, $3, $4, $5, $6)', user)
-		.then(data=>{
+	db.none('insert into hmfs(username, password, gender, email, first_name, last_name) values ($1, $2, $3, $4, $5, $6)', user)
+		.then(()=>{
+			var token = jwt.sign({user: username}, statics.appSecret, {
+          		expiresIn : 60*60*24*100
+    		});
+
 		    return res.status(200).send({ 
 	        	success: true, 
-	        	message: 'user added: ' + data.username 
+	        	message: token
 			});
 		})
 		.catch(err => {
+			console.log(err);
 		    return res.status(403).send({ 
 	        	success: false, 
-	        	message: 'user not added '
+	        	message: 'user not added ' 
 			});
 		})
 }
