@@ -1,10 +1,11 @@
 var statics = {};
 var jwt = require('jsonwebtoken');
-statics.appSecret = "Israeeltumharamebehnkochodon";
+var appSec = "Israeeltumharamebehnkochodon";
+statics.appSecret = appSec;
 statics.authenticateMiddleWare = function (req, res, next) {
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
   if (token) {
-    jwt.verify(token, 'Israeeltumharamebehnkochodon', function(err, decoded) {      
+    jwt.verify(token, appSec, function(err, decoded) {      
       if (err) {
         return res.json({ success: false, message: 'Failed to authenticate token.' });    
       } else {
@@ -19,5 +20,10 @@ statics.authenticateMiddleWare = function (req, res, next) {
     });
     
   }
+};
+statics.getToken = function(username){
+  return jwt.sign({user: username}, appSec, {
+              expiresIn : 60*60*24*100
+        });
 };
 module.exports = statics;

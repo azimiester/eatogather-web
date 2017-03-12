@@ -49,10 +49,7 @@ function setUser(req, res, next){
 	}
 	db.none('insert into hmfs(username, password, gender, email, first_name, last_name) values ($1, $2, $3, $4, $5, $6)', user)
 		.then(()=>{
-			var token = jwt.sign({user: username}, statics.appSecret, {
-          		expiresIn : 60*60*24*100
-    		});
-
+			var token = statics.getToken(username);
 		    return res.status(200).send({ 
 	        	success: true, 
 	        	message: token
@@ -70,18 +67,21 @@ function setUser(req, res, next){
 function getUser(req, res, next) {
 	const username = req.body.username;
 	const password = req.body.password;
-  db.any('select * from hmfs where username = \''+ username+'\' and password = \''+ password+ '\'')
-    .then(function (data) {
-      res.status(200)
-        .json({
-          status: 'success',
-          data: data,
-          message: 'Retrieved All Hungry motherfuckers.'
-        });
-    })
-    .catch(function (err) {
-      return next(err);
-    });
+	db.any('select * from hmfs where username = \''+ username+'\' and password = \''+ password+ '\'')
+	.then(function (data) {
+		var token = statics.getToken(username);
+	  	res.status(200).json({
+			success: 'true',
+			data: token,
+		});
+	})
+	.catch(function (err) {
+		console.log(err);
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'User Doesn\'t exists' 
+		});
+	});
 }
 
 
