@@ -63,7 +63,7 @@ function getUser(req, res, next) {
 	const password = req.body.password;
 	db.any('select * from hmfs where email = \''+ email+'\' and password = \''+ password+ '\'')
 	.then(function (data) {
-		var token = statics.getToken(username);
+		var token = statics.getToken(email);
 	  	res.status(200).json({
 			success: 'true',
 			data: token,
