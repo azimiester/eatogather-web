@@ -51,7 +51,7 @@ function setUser(req, res, next){
 		})
 	}).catch((err)=>{
 		console.log(err);
-		res.status(400).json({
+		return res.status(400).json({
 			success: false,
 			message: err
 		});
@@ -61,19 +61,25 @@ function setUser(req, res, next){
 function getUser(req, res, next) {
 	const email = req.body.email;
 	const password = req.body.password;
-	db.any('select * from hmfs where email = \''+ email+'\' and password = \''+ password+ '\'')
-	.then(function (data) {
-		var token = statics.getToken(email);
-	  	res.status(200).json({
-			success: 'true',
-			data: token,
+	if (!email || !password){
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'Wrong Email or Password' 
 		});
-	})
-	.catch(function (err) {
+	}
+	db.one('select * from hmfs where email=$1 and password=$2', [email, password] )
+	.then(function (data) {
+		console.log(data);
+		var token = statics.getToken(email);
+	  	return res.status(200).json({
+			success: true,
+			message: token,
+		});
+	}).catch(function (err) {
 		console.log(err);
 	    return res.status(403).send({ 
 	    	success: false, 
-	    	message: 'User Doesn\'t exists' 
+	    	message: 'Wrong Email or Password' 
 		});
 	});
 }

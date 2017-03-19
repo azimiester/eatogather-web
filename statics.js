@@ -13,16 +13,14 @@ statics.authenticateMiddleWare = function (req, res, next) {
         next();
       }
     });
-  } else {
-    return res.status(403).send({ 
-        success: false, 
-        message: 'No token provided.' 
-    });
-    
   }
+  return res.status(403).send({ 
+      success: false, 
+      message: 'No token provided.' 
+  });
 };
-statics.getToken = function(username){
-  return jwt.sign({user: username}, appSec, {
+statics.getToken = function(email){
+  return jwt.sign({user: email}, appSec, {
               expiresIn : 60*60*24*100
         });
 };
