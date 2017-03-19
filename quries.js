@@ -2,6 +2,7 @@ var promise = require('bluebird');
 var cs = require('./connectionString');
 var statics = require('./statics');
 var jwt = require('jsonwebtoken');
+var User = require('./models/user');
 
 var options = {
   promiseLib: promise
@@ -27,47 +28,40 @@ function getHosts(req, res, next) {
 }
 
 function setUser(req, res, next){
-	const username = req.body.username;
-	const password = req.body.password;
-	const gender = req.body.gender;
-	const email = req.body.email;
-	const firstName = req.body.first_name;
-	const lastName = req.body.last_name;
-	const user = [username, password, gender, email, firstName, lastName];
-	console.log(req.body);
-	// TODO: validation in a new file
-	// TODO: check if the user is already there.
-
-	for (var key in user){
-		if (!user.hasOwnProperty(key) || user[key] != undefined){
-			continue;
-		}
-		res.status(400).json({
-			status: 'error',
-			data: user[key] +"No shit motherfucker."
-		});
-	}
-	db.none('insert into hmfs(username, password, gender, email, first_name, last_name) values ($1, $2, $3, $4, $5, $6)', user)
+	var user = new User();
+	user.getFromReq(req);
+	user.isValidUser().then((record)=>{
+		db.none('insert into hmfs(email, password, phone, first_name, last_name, gender) values ($1, $2, $3, $4, $5, $6)', record)
 		.then(()=>{
-			var token = statics.getToken(username);
+			var token = statics.getToken(record[0]);
 		    return res.status(200).send({ 
 	        	success: true, 
 	        	message: token
 			});
 		})
 		.catch(err => {
-			console.log(err);
+			var message = "user not added";
+			if (err.code ==='23505'){
+				message = err.detail;
+			}
 		    return res.status(403).send({ 
 	        	success: false, 
-	        	message: 'user not added ' 
+	        	message: message
 			});
 		})
+	}).catch((err)=>{
+		console.log(err);
+		res.status(400).json({
+			success: false,
+			message: err
+		});
+	});
 }
 
 function getUser(req, res, next) {
-	const username = req.body.username;
+	const email = req.body.email;
 	const password = req.body.password;
-	db.any('select * from hmfs where username = \''+ username+'\' and password = \''+ password+ '\'')
+	db.any('select * from hmfs where email = \''+ email+'\' and password = \''+ password+ '\'')
 	.then(function (data) {
 		var token = statics.getToken(username);
 	  	res.status(200).json({

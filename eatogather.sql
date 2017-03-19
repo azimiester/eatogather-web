@@ -6,15 +6,14 @@ CREATE DATABASE eatogather;
 
 CREATE TABLE hmfs (
     ID bigserial PRIMARY KEY,
-    username text NOT NULL,
     password text ,
-    auth_key text ,
-    email text  NOT NULL,
+    email text  UNIQUE,
     first_name text NOT NULL,
     last_name text NOT NULL,
-    gender bit(1) NOT NULL
+    gender bit(1) NOT NULL, 
+    phone text UNIQUE
 );
 
 
-INSERT INTO hmfs (username, password, auth_key, email, gender, first_name, last_name )
-  VALUES ('Azeem', 'Dost', NULL, 'azmaktr@gmail.com', B'1', 'Azeem', 'Akhter');
+INSERT INTO hmfs ( password, email, gender, first_name, last_name, phone )
+  VALUES ('Azeem', 'azmaktr@gmail.com', B'1', 'Azeem', 'Akhter', '1234123');
