@@ -2,6 +2,7 @@ var promise = require('bluebird');
 var cs = require('./connectionString');
 var jwt = require('jsonwebtoken');
 var User = require('./models/user');
+var Host = require('./models/host');
 var statics = require('./statics');
 
 var options = {
@@ -13,24 +14,34 @@ var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
 function getHosts(){
-	
+
 }
 
 function createHost(req, res, next) {
-  db.any('select * from hmfs')
-    .then(function (data) {
-      res.status(200)
-        .json({
-          status: 'success',
-          data: data,
-          message: 'Retrieved All Hungry motherfuckers.'
-        });
-    })
-    .catch((err)=>{
+	var host = new Host();
+	var email = req.decoded;
+	// TODO: CHeck when did the user create a host last and prevent spamming.
+	host.create(req).then(()=>{
+		db.task(t => {
+	    return t.one('select * from hmfs where email=$1', [email] )
+	        .then(user => {
+	        	host.uid = user.uid;
+	            return t.one('insert into feast(title, uid, description, location, tags) values ($1, $2, $3, $4, $5)',  host.getArray());
+	        });
+		})
+	}).then(()=>{
+		delete host.uid;
+		var token = statics.getToken(email);		
+ 	  	return res.status(200).json({
+			success: true,
+			message: token,
+			data: host
+		});
+	}).catch((err)=>{
 		console.log(err);
-		return res.status(203).json({
-			success: false,
-			message: err
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'cant create' 
 		});
 	});
 }
@@ -102,7 +113,7 @@ function updateUser(req, res, next){
         .then(data => {
 			user.getFromRes(data);
 			user.update(req);
-            return t.one('update hmfs set bio = $1, location = $2, image = $3, password =$4 where id = $5',  [user.bio, user.location, user.image, user.password, user.id]);
+            return t.none('update hmfs set bio = $1, location = $2, image = $3, password =$4 where id = $5',  [user.bio, user.location, user.image, user.password, user.id]);
         });
 	}).then(() => {
 		var token = statics.getToken(email);

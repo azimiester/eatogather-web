@@ -25,3 +25,13 @@ CREATE TABLE hmfs (
 
 INSERT INTO hmfs ( password, email, gender, firstName, lastName, phone, bio, location, image )
   VALUES ('Azeem', 'azmaktr@gmail.com', B'1', 'Azeem', 'Akhter', '1234123', NULL, NULL, NULL);
+
+CREATE TABLE feasts (
+	ID bigserial PRIMARY KEY,
+	uid bigserial REFERENCES hmfs(ID) ON DELETE CASCADE,
+	description text NOT NULL,
+	title text NOT NULL,
+	location text NOT NULL,
+	tags text,
+	created_at timestamptz NOT NULL DEFAULT now()
+);
