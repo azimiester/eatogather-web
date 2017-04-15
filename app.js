@@ -8,12 +8,12 @@ var users = require('./users');
 var hosts = require('./hosts');
 var statics = require('./statics');
 var app = express();
+const fileUpload = require('express-fileupload');
+app.use(fileUpload());
+
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false,
-    parameterLimit: 100000,
-    limit: '50mb' 
-}));
+app.use(bodyParser.urlencoded({ extended: false}));
 app.use(cookieParser());
 
 

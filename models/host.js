@@ -1,11 +1,11 @@
-var required = ['title', 'uid', 'description', 'location'];
-var fields = required.concat(['tags']);
+var required = ['title', 'description', 'location', 'noofguest', 'datetime'];
+var fields = required.concat(['tags', 'uid']);
 var reg = new RegExp("^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}");
 class host {
 	checkRequired(attrs){
 		for (let attr of required){
 			if(!attrs[attr]){
-				return attr;
+				return false;
 			}
 		}
 		return true;
@@ -14,24 +14,30 @@ class host {
 		// TODO: Check latitude and longitude.
 	}
 	create (req) {
-		return new Promise((resolve, reject)=>{
-			if (!req){
-				reject('request not found');
-			}
-			var reqBody = req.body;
-			var checked = this.checkRequired(reqBody);
-			if (!checked){
-				reject('{checked} not found');
-				return;
-			}
+		if (!req){
+			return {
+				msg: 'request not found', 
+				succ: false
+			};
+		}
+		var reqBody = req.body;
+		var checked = this.checkRequired(reqBody);
+		if (!checked){
+			return {
+				msg: 'missing parameters not found', 
+				succ: false
+			};
+		}
 
-			for (let attr of fields){
-				if (reqBody[attr]){
-					this[attr] = reqBody[attr];
-				}
+		for (let attr of fields){
+			if (reqBody[attr]){
+				this[attr] = reqBody[attr];
 			}
-			resolve();
-		});
+		}
+		return {
+				msg: '', 
+				succ: true
+			};
 	}
 	getArray(){
 		var ret = [];

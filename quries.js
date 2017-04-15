@@ -13,24 +13,82 @@ var pgp = require('pg-promise')(options);
 var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
-function getHosts(){
 
+function getHosts(req, res, next){
+	var user = new User();
+	user.getLocation(req).then((loc) => {
+		var location = loc;
+		db.any('select * from feasts')
+		.then((feasts)=>{
+			var token = statics.getToken(req.decoded);
+			var data = user.getFeastByLocation(feasts,loc);
+	 	  	return res.status(200).json({
+				success: true,
+				message: token,
+				data: data
+			});
+		}).catch(()=>{
+		 	return res.status(403).send({ 
+		    	success: false, 
+		    	message: 'no data dude' 
+			});
+		});
+	}).catch(()=>{
+	 	return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'cant get location dude.' 
+		});
+	});
+}
+
+function deleteHost(req, res, next){
+	const email = req.decoded;
+	const hostId = req.body.id;
+	db.one('select * from feasts f, hmfs h where h.email = $1 and f.id = $2', [email, hostId]).
+	then((hfs)=>{
+		if (hfs.email != email){
+			return res.status(403).send({ 
+		    	success: false, 
+		    	message: 'cant delete' 
+			});
+		}
+		db.none('delete from feasts where id=$1', [hostId]).then(()=>{
+			var token = statics.getToken(email);
+	 	  	return res.status(200).json({
+				success: true,
+				message: token,
+				data: 'deleted'
+			});
+		});
+	}).catch((err)=>{
+		console.log(err);
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'cant delete' 
+		});
+	});
 }
 
 function createHost(req, res, next) {
 	var host = new Host();
 	var email = req.decoded;
 	// TODO: CHeck when did the user create a host last and prevent spamming.
-	host.create(req).then(()=>{
-		db.task(t => {
-	    return t.one('select * from hmfs where email=$1', [email] )
-	        .then(user => {
-	        	host.uid = user.uid;
-	            return t.one('insert into feast(title, uid, description, location, tags) values ($1, $2, $3, $4, $5)',  host.getArray());
-	        });
-		})
+	var r = host.create(req);
+	if (!r.succ){
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'cant create1' 
+		});
+	}
+	db.task(t => {
+    return t.one('select * from hmfs where email=$1', [email] )
+        .then(user => {
+        	host.uid = user.id;
+            return t.one('insert into feasts(title, description, location, noofguest, datetime, tags, uid) values ($1, $2, $3, $4, $5, $6, $7) returning ID',  host.getArray()).then((h)=>{
+            	host.id = h.id;
+            });
+        });
 	}).then(()=>{
-		delete host.uid;
 		var token = statics.getToken(email);		
  	  	return res.status(200).json({
 			success: true,
@@ -112,8 +170,9 @@ function updateUser(req, res, next){
     return t.one('select * from hmfs where email=$1', [email] )
         .then(data => {
 			user.getFromRes(data);
-			user.update(req);
-            return t.none('update hmfs set bio = $1, location = $2, image = $3, password =$4 where id = $5',  [user.bio, user.location, user.image, user.password, user.id]);
+			user.update(req).then(()=>{
+	            return t.none('update hmfs set bio = $1, location = $2, image = $3, password =$4 where id = $5',  [user.bio, user.location, user.image, user.password, user.id]);
+			});
         });
 	}).then(() => {
 		var token = statics.getToken(email);
@@ -135,7 +194,8 @@ function updateUser(req, res, next){
 module.exports = {
   hosts: {
   	get: getHosts,
-  	set: createHost
+  	set: createHost,
+  	remove: deleteHost
   },
   users: {
   	get: getUser,

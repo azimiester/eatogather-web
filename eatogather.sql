@@ -33,5 +33,7 @@ CREATE TABLE feasts (
 	title text NOT NULL,
 	location text NOT NULL,
 	tags text,
-	created_at timestamptz NOT NULL DEFAULT now()
+	created_at timestamptz NOT NULL DEFAULT now(),
+	datetime timestamptz NOT NULL,
+	noofguest int4 NOT NULL
 );
