@@ -200,33 +200,18 @@ function getOneHost(req, res, next){
 	db.one('select f.id, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, h.id as userid, h.firstname, h.lastname, h.email from feasts f, hmfs h where f.id=$1 and h.id = f.uid', [hostId])
 	.then((hf)=>{
 		response = hf;
-		return db.one('select count(*) as joining from hostfeast where fid=$1', [hostId]);
+		return db.one('select (select count(*) from hostfeast where fid=$1) as joining, (select count(*) from hostfeast where fid=$1 and uid=$2) as joined', [hostId, hf.userid]);
 	})
 	.then(hf=>{
 		response.joining = hf.joining;
 		response.ishost = response.email === email;
 		if (response.email != email){
 			delete response.email;
-			response.canjoin = hf.joining < hf.noofguest;
-			if (!response.canjoin) {
-				return res.status(200).json({
-					success: true,
-					message: token,
-					data: response
-				});
-			}
-			db.one('select count(*) as count from hostfeast where fid=$1 and uid =$2', [hostId, response.userid]).then((res)=>{
-				response.canjoin = res.count == 0; 
-				return res.status(200).json({
-					success: true,
-					message: token,
-					data: response
-				});
-			}).catch(()=>{
-			    return res.status(403).send({ 
-			    	success: false, 
-			    	message: 'nothing to show' 
-				});
+			response.canjoin = parseInt(hf.joining) < parseInt(response.noofguest) && parseInt(hf.joined) == 0;
+			return res.status(200).json({
+				success: true,
+				message: token,
+				data: response
 			});
 		}
 		return db.any('select h.firstname, h.lastname, hf.uid, hf.created_at as joined from hostfeast hf, hmfs h where hf.fid=8 and h.id = hf.uid order by joined asc', [hostId]);
