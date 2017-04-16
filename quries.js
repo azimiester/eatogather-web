@@ -40,7 +40,7 @@ function userStats(req, res, next){
 	}).then ((old)=>{
 		stats.guest.old = old;
 		return res.status(200).json({
-			success: success,
+			success: true,
 			message: token,
 			data: stats
 		});
@@ -207,7 +207,7 @@ function getOneHost(req, res, next){
 		response.ishost = response.email === email;
 		if (response.email != email){
 			delete response.email;
-			response.canjoin = hf.noofguest < hf.joining;
+			response.canjoin = hf.joining < hf.noofguest;
 			if (!response.canjoin) {
 				return res.status(200).json({
 					success: true,
