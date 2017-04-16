@@ -40,8 +40,8 @@ function getOneHost(req, res, next){
 				data: 'deleted'
 			});
 		});
-	}).catch((err)=>{
-		console.log(err);
+	})
+	.catch((err)=>{
 	    return res.status(403).send({ 
 	    	success: false, 
 	    	message: 'cant delete' 
@@ -203,13 +203,20 @@ function updateUser(req, res, next){
 	var email = req.decoded;
 	var user = new User();
 	db.task(t => {
-    return t.one('select * from hmfs where email=$1', [email] )
-        .then(data => {
-			user.getFromRes(data);
-			user.update(req).then(()=>{
-	            return t.none('update hmfs set bio = $1, location = $2, image = $3, password =$4 where id = $5',  [user.bio, user.location, user.image, user.password, user.id]);
-			});
-        });
+	    return t.one('select * from hmfs where email=$1', [email] )
+		    .then(data => {
+		    	var tsk = t;
+				user.getFromRes(data);
+				user.update(req).then(()=>{
+		            return db.none('update hmfs set bio = $1, location = $2, image = $3, password =$4 where id = $5',  [user.bio, user.location, user.image, user.password, user.id]);
+				}).catch(err=>{
+					console.log(err);
+					return res.status(403).send({ 
+				    	success: false, 
+				    	message: 'cant update user' 
+					});
+				});
+		    });
 	}).then(() => {
 		var token = statics.getToken(email);
  	  	return res.status(200).json({
