@@ -14,40 +14,33 @@ var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
 function getOneHost(req, res, next){
-	/*const email = req.decoded;
-	const hostId = req.body.id;
+	const email = req.decoded;
+	const hostId = req.query.id;
 	var response = {};
-	db.one('select f.id, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, h.id, h.firstname, h.lastname from feasts f, hmfs h where f.id=$1 and h.id = f.uid', [hostId])
+	db.one('select f.id, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, h.id, h.firstname, h.lastname, h.email from feasts f, hmfs h where f.id=$1 and h.id = f.uid', [hostId])
 	.then((hf)=>{
 		response = hf;
 		return db.one('select count(*) as joining from hostfeast where fid=$1', [hostId]);
 	})
-	.then(hf)=>{
+	.then(hf=>{
 		response.joining = hf.joining;
 		var token = statics.getToken(email);
-		if (hfs.email != email){
+		if (response.email != email){
+			delete response.email;
 			return res.status(200).json({
 				success: true,
 				message: token,
 				data: response
 			});
 		}
-		db.any('sele', [hostId]).then(()=>{
-			var token = statics.getToken(email);
-	 	  	return res.status(200).json({
-				success: true,
-				message: token,
-				data: 'deleted'
-			});
-		});
-	})
+		return db.any('select hf.', [hostId]);
+	}).then
 	.catch((err)=>{
 	    return res.status(403).send({ 
 	    	success: false, 
 	    	message: 'cant delete' 
 		});
 	});
-*/
 }
 
 function getHosts(req, res, next){

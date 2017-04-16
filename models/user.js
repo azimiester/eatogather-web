@@ -34,6 +34,7 @@ class User {
 				resolve();
 				return;
 			}
+			/*
 			if (!fs.existsSync(dir)){
 			    fs.mkdirSync(dir);
 			}
@@ -41,7 +42,8 @@ class User {
 			if (!fs.existsSync(`${dir}/${dirName}`)){
 			    fs.mkdirSync(`${dir}/${dirName}`);
 			}
-			var img = `${dir}/${dirName}/${image.name}`;
+			*/
+			var img = `${dir}/${image.name}`;
 			image.mv(img, function(err) {
 				//TODO: Check image size and extension
 				if (err){
@@ -92,8 +94,8 @@ class User {
 	}
 	getLocation(req){
 		return new Promise(function (resolve, reject){
-			if (req.body.location){
-				var ret = req.body.location.split(' ').map((v)=>{
+			if (req.query.location){
+				var ret = req.query.location.split(' ').map((v)=>{
 					return parseFloat(v);
 				});
 				resolve(ret);
