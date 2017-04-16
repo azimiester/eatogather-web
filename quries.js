@@ -208,6 +208,7 @@ function getOneHost(req, res, next){
 		if (response.email != email){
 			delete response.email;
 			response.canjoin = parseInt(hf.joining) < parseInt(response.noofguest) && parseInt(hf.joined) == 0;
+			response.hasjoined = parseInt(hf.joined) == 1;
 			return res.status(200).json({
 				success: true,
 				message: token,
@@ -220,6 +221,8 @@ function getOneHost(req, res, next){
 			return guests;
 		}
 		response.canjoin = false;
+		response.hasjoined = false;
+
 		response.guests = guests;
 			return res.status(200).json({
 				success: true,
