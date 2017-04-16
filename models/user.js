@@ -26,11 +26,14 @@ class User {
 				}
 			}
 			if (!req.files.image){
+				console.log(1+'-----');
 				resolve();
 				return;
+
 			}
+
 			let image = req.files.image;
-			if (!(/\.(gif|jpg|jpeg|tiff|png)$/i).test(filename)){
+			if (!(/\.(gif|jpg|jpeg|tiff|png)$/i).test(image.name)){
 				resolve();
 				return;
 			}
@@ -45,6 +48,8 @@ class User {
 			image.mv(img, function(err) {
 				//TODO: Check image size and extension
 				if (err){
+					console.log(1+'-----');
+
 					resolve();
 					return;
 				}
