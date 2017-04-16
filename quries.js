@@ -13,6 +13,45 @@ var pgp = require('pg-promise')(options);
 var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
+function userStats(req, res, next){
+	const email = req.decoded;
+	const uid = req.body.uid || req.query.uid;
+	var token = statics.getToken(email);
+	var stats = {
+		host : {
+			upcoming : [],
+			old: []
+		},
+		guest: {
+			upcoming: [],
+			old: []
+		}
+	};
+	db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where datetime >=now() and f.uid = (select id from hmfs where email = $1) order by datetime asc;', [email])
+	.then( (upcoming)=> {
+		stats.host.upcoming = upcoming;
+		return db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where datetime < now() and f.uid = (select id from hmfs where email = $1) order by datetime desc;', [email]);
+	}).then ( (old)=> {
+		stats.host.old = old;
+		return db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where f.datetime >= now() and f.id in (select fid from hostfeast where uid = (select id from hmfs where email = $1)) order by f.datetime asc', [email]);
+	}).then ((upcoming)=>{
+		stats.guest.upcoming = upcoming;
+		return db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where f.datetime < now() and f.id in (select fid from hostfeast where uid = (select id from hmfs where email = $1)) order by f.datetime desc', [email]);
+	}).then ((old)=>{
+		stats.guest.old = old;
+		return res.status(200).json({
+			success: success,
+			message: token,
+			data: stats
+		});
+	}).catch( ()=>{
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'cant get stats' 
+		});
+	})
+}
+
 function removeJoin(req, res, next){
 	const email = req.decoded;
 	const hostId = req.body.id || req.query.id;
@@ -91,7 +130,7 @@ function joinHost(req, res, next){
 	var noofguest;
 	var userid;
 	var token = statics.getToken(email);
-	db.any("select h.id uid, f.noofguest from hmfs h, feasts f where f.id=$1 and h.id = f.id;",[hostId])
+	db.any("select h.id uid, f.noofguest from hmfs h, feasts f where f.id=$1 and h.id = f.uid;",[hostId])
 	.then((record)=>{
 		if (!record.length){
 			return res.status(403).send({ 
@@ -406,6 +445,7 @@ module.exports = {
   users: {
   	get: getUser,
   	set: setUser,
-  	update: updateUser
+  	update: updateUser,
+  	stats: userStats
   }
 };
