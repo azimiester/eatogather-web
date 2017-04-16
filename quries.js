@@ -13,6 +13,30 @@ var pgp = require('pg-promise')(options);
 var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
+function singleUser(req, res, next){
+	const uid = req.body.id || req.query.id;
+	if (!uid){
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'id missing' 
+		});
+	}
+	db.one('select firstname, lastname, gender, phone, bio, image, location from hmfs where id = $1', [uid])
+	.then((user)=>{
+		return res.status(200).json({
+			success: true,
+			message: "N/A",
+			data: user
+		});
+	})
+	.catch((err)=>{
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'cant get stats' 
+		});
+	})
+}
+
 function userStats(req, res, next){
 	const email = req.decoded;
 	const uid = req.body.uid || req.query.uid;
@@ -434,6 +458,7 @@ module.exports = {
   	get: getUser,
   	set: setUser,
   	update: updateUser,
-  	stats: userStats
+  	stats: userStats,
+  	one: singleUser
   }
 };
