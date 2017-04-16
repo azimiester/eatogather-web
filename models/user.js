@@ -25,7 +25,7 @@ class User {
 					this[updateableFields[i]] = req.body[updateableFields[i]];
 				}
 			}
-			if (!req.files.image){
+			if (!req.files ||  !req.files.image){
 				resolve();
 				return;
 			}

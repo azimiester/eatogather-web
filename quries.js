@@ -13,32 +13,79 @@ var pgp = require('pg-promise')(options);
 var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
+function joinHost(req, res, next){
+	const email = req.decoded;
+	const hostId = req.query.id;
+	if (!hostId){
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'id missing' 
+		});
+	}
+	db.one('select * from hmfs hf');
+
+}
+
 function getOneHost(req, res, next){
 	const email = req.decoded;
 	const hostId = req.query.id;
+	if (!hostId){
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'id missing' 
+		});
+	}
+	var token = statics.getToken(email);
 	var response = {};
-	db.one('select f.id, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, h.id, h.firstname, h.lastname, h.email from feasts f, hmfs h where f.id=$1 and h.id = f.uid', [hostId])
+	db.one('select f.id, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, h.id as userid, h.firstname, h.lastname, h.email from feasts f, hmfs h where f.id=$1 and h.id = f.uid', [hostId])
 	.then((hf)=>{
 		response = hf;
 		return db.one('select count(*) as joining from hostfeast where fid=$1', [hostId]);
 	})
 	.then(hf=>{
 		response.joining = hf.joining;
-		var token = statics.getToken(email);
+		response.ishost = response.email === email;
 		if (response.email != email){
 			delete response.email;
+			response.canjoin = hf.noofguest < hf.joining;
+			if (!response.canjoin) {
+				return res.status(200).json({
+					success: true,
+					message: token,
+					data: response
+				});
+			}
+			db.one('select count(*) as count from hostfeast where fid=$1 and uid =$2', [hostId, response.userid]).then((res)=>{
+				response.canjoin = res.count == 0; 
+				return res.status(200).json({
+					success: true,
+					message: token,
+					data: response
+				});
+			}).catch(()=>{
+			    return res.status(403).send({ 
+			    	success: false, 
+			    	message: 'nothing to show' 
+				});
+			});
+		}
+		return db.any('select h.firstname, h.lastname, hf.uid, hf.created_at as joined from hostfeast hf, hmfs h where hf.fid=8 and h.id = hf.uid order by joined asc', [hostId]);
+	}).then((guests)=>{
+		if (!(guests instanceof Array)){
+			return guests;
+		}
+		response.canjoin = false;
+		response.guests = guests;
 			return res.status(200).json({
 				success: true,
 				message: token,
 				data: response
 			});
-		}
-		return db.any('select hf.', [hostId]);
-	}).then
+	})
 	.catch((err)=>{
 	    return res.status(403).send({ 
 	    	success: false, 
-	    	message: 'cant delete' 
+	    	message: 'nothing to show' 
 		});
 	});
 }
@@ -232,7 +279,8 @@ module.exports = {
   	get: getHosts,
   	set: createHost,
   	remove: deleteHost,
-  	getOne: getOneHost
+  	getOne: getOneHost,
+  	join: joinHost
   },
   users: {
   	get: getUser,
