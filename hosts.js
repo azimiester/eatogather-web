@@ -9,5 +9,6 @@ router.post('/remove', statics.authenticateMiddleWare, db.hosts.remove);
 router.get('/', db.hosts.get);
 router.get('/one', statics.authenticateMiddleWare, db.hosts.getOne);
 router.post('/join', statics.authenticateMiddleWare, db.hosts.join);
+router.post('/unjoin', statics.authenticateMiddleWare, db.hosts.removeJoin);
 
 module.exports = router;

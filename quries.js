@@ -13,16 +13,137 @@ var pgp = require('pg-promise')(options);
 var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
-function joinHost(req, res, next){
+function removeJoin(req, res, next){
 	const email = req.decoded;
-	const hostId = req.query.id;
+	const hostId = req.body.id || req.query.id;
+	const uid = req.body.uid || req.query.uid;
+	var token = statics.getToken(email);
+
 	if (!hostId){
 	    return res.status(403).send({ 
 	    	success: false, 
 	    	message: 'id missing' 
 		});
 	}
-	db.one('select * from hmfs hf');
+	// User hasn't passed the id, remove him if he is already ...
+	if (!uid) {
+		db.result('delete from hostfeast where fid = $1 and uid = (select id from hmfs where email = $2)',[hostId, email])
+		.then ((result)=>{
+			var success = result.rowCount == 1;
+			var message = !success ? 'You havent joined' : 'removed';
+
+			return res.status(200).json({
+				success: success,
+				message: token,
+				data: message
+			});
+		})
+		.catch(()=>{
+		    return res.status(403).send({ 
+		    	success: false, 
+		    	message: 'id missing' 
+			});
+		});
+	}else {
+		db.any("select * from hmfs h, feasts f where f.id = $1 and h.email = $2 and f.uid = h.id",[hostId, email])		
+		.then ((rec)=>{
+			if (!rec.length){
+			    return res.status(403).send({ 
+			    	success: false, 
+			    	message: 'You cant do this dude'
+				});		
+			}
+			db.result('delete from hostfeast where fid=$1 and uid=$2', [hostId, uid])
+			then((result)=> {
+				var success = result.rowCount == 1;
+				var message = !success ? 'user hasnt joined' : 'removed';
+				return res.status(200).json({
+					success: success,
+					message: token,
+					data: message
+				});	
+			})
+			.catch(()=>{
+			    return res.status(403).send({ 
+			    	success: false, 
+			    	message: 'something went wrong' 
+				});
+			});
+		})
+		.catch(()=>{
+		    return res.status(403).send({ 
+		    	success: false, 
+		    	message: 'something went wrong' 
+			});
+		});
+	}
+	
+}
+function joinHost(req, res, next){
+	const email = req.decoded;
+	const hostId = req.body.id || req.query.id;
+	if (!hostId){
+	    return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'id missing' 
+		});
+	}
+	var noofguest;
+	var userid;
+	var token = statics.getToken(email);
+	db.any("select h.id uid, f.noofguest from hmfs h, feasts f where f.id=$1 and h.id = f.id;",[hostId])
+	.then((record)=>{
+		if (!record.length){
+			return res.status(403).send({ 
+		    	success: false, 
+		    	message: 'Feast not found' 
+			});
+		}
+		noofguest = record[0].noofguest;
+		return db.any('select f.noofguest, h.id as uid from hmfs h, feasts f where h.email=$1 and f.id = $2 and f.uid = h.id', [email, hostId]);
+	})
+	.then((record)=>{
+		if (!(record instanceof Array)){
+			return record;
+		}
+		if(record.length){
+			return res.status(403).send({ 
+		    	success: false, 
+		    	message: 'you cant join your own feast' 
+			});
+		}
+		return db.any('select count(*) as joining from hostfeast where fid=$1', [hostId]);
+	})
+	.then((record)=>{
+		if (!(record instanceof Array)){
+			return record;
+		}
+		if (parseInt(record[0].joining) >= noofguest){
+			if(record.length){
+				return res.status(403).send({ 
+			    	success: false, 
+			    	message: 'feast full' 
+				});
+			}
+		}
+		return db.any('insert into hostfeast (uid, fid, approved) values ((select id from hmfs where email=$1),$2,$3) returning fid;', [email, hostId, (1 >>> 0).toString(2)]);
+	})
+	.then(record=>{
+		if (!(record instanceof Array)){
+			return record;
+		}
+		return res.status(200).json({
+			success: true,
+			message: token,
+			data: "Joined"
+		});
+	})
+	.catch(()=>{
+		return res.status(403).send({ 
+	    	success: false, 
+	    	message: 'Can\'t join'
+		});
+	});
 
 }
 
@@ -96,11 +217,10 @@ function getHosts(req, res, next){
 		var location = loc;
 		db.any('select * from feasts where datetime >= now()')
 		.then((feasts)=>{
-			var token = statics.getToken(req.decoded);
 			var data = user.getFeastByLocation(feasts,loc);
 	 	  	return res.status(200).json({
 				success: true,
-				message: token,
+				message: 'N/a',
 				data: data
 			});
 		}).catch(()=>{
@@ -280,7 +400,8 @@ module.exports = {
   	set: createHost,
   	remove: deleteHost,
   	getOne: getOneHost,
-  	join: joinHost
+  	join: joinHost,
+  	removeJoin: removeJoin
   },
   users: {
   	get: getUser,
