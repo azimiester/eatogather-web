@@ -13,12 +13,14 @@ var pgp = require('pg-promise')(options);
 var connectionString = process.env.DATABASE_URL || cs.connection;
 var db = pgp(connectionString);
 
+function getOneHost(req, res, next){
+}
 
 function getHosts(req, res, next){
 	var user = new User();
 	user.getLocation(req).then((loc) => {
 		var location = loc;
-		db.any('select * from feasts')
+		db.any('select * from feasts where datetime >= now()')
 		.then((feasts)=>{
 			var token = statics.getToken(req.decoded);
 			var data = user.getFeastByLocation(feasts,loc);
@@ -195,7 +197,8 @@ module.exports = {
   hosts: {
   	get: getHosts,
   	set: createHost,
-  	remove: deleteHost
+  	remove: deleteHost,
+  	getOne: getOneHost
   },
   users: {
   	get: getUser,

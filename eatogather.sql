@@ -37,3 +37,12 @@ CREATE TABLE feasts (
 	datetime timestamptz NOT NULL,
 	noofguest int4 NOT NULL
 );
+
+CREATE TABLE hostfeast (
+	uid bigserial REFERENCES hmfs(ID) on DELETE CASCADE,
+	fid bigserial REFERENCES feasts(ID) on DELETE CASCADE,
+	created_at timestamptz NOT NULL DEFAULT now(),
+	note text,
+    approved bit(1) NOT NULL, 
+	PRIMARY KEY (uid, fid)
+);

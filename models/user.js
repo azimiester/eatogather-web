@@ -5,6 +5,7 @@ var allFields2 = ['bio', 'location', 'image', 'phone','firstname', 'lastname', '
 var fs = require('fs');
 var dir = './tmpss';
 var http = require('http');
+var statics = require('../statics');
 
 class User {
 
@@ -126,10 +127,18 @@ class User {
 		});
 	}
 	getFeastByLocation(feasts, location){
+		var res = [];
 		for (let feast of feasts){
-
+			var flocation = feast.location.split(' ').map((v)=>{
+				return parseFloat(v);
+			});
+			var distance = statics.getDistanceFromLatLonInKm(flocation[0], flocation[1], location[0], location[1]);
+			feast.distance = distance;
 		}
-		return {};
+		feasts.sort((a,b)=>{
+			return a.distance-b.distance;
+		})
+		return feasts;
 	}
 }
 module.exports = User;

@@ -6,7 +6,7 @@ var bodyParser = require('body-parser');
 
 router.post('/create', statics.authenticateMiddleWare, db.hosts.set);
 router.post('/remove', statics.authenticateMiddleWare, db.hosts.remove);
-//router.post('/delete', statics.authenticateMiddleWare, db.hosts.delete);
 router.get('/', db.hosts.get);
+router.get('/one', statics.authenticateMiddleWare, db.hosts.getOne);
 
 module.exports = router;
