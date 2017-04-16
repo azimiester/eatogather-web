@@ -214,7 +214,7 @@ function getOneHost(req, res, next){
 				data: response
 			});
 		}
-		return db.any('select h.firstname, h.lastname, hf.uid, hf.created_at as joined from hostfeast hf, hmfs h where hf.fid=8 and h.id = hf.uid order by joined asc', [hostId]);
+		return db.any('select h.firstname, h.lastname, hf.uid, hf.created_at as joined from hostfeast hf, hmfs h where hf.fid=$1 and h.id = hf.uid order by joined asc', [hostId]);
 	}).then((guests)=>{
 		if (!(guests instanceof Array)){
 			return guests;
