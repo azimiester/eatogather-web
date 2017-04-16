@@ -215,7 +215,7 @@ function getHosts(req, res, next){
 	var user = new User();
 	user.getLocation(req).then((loc) => {
 		var location = loc;
-		db.any('select * from feasts where datetime >= now()')
+		db.any('select f.id, f.uid, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where datetime >= now();')
 		.then((feasts)=>{
 			var data = user.getFeastByLocation(feasts,loc);
 	 	  	return res.status(200).json({
