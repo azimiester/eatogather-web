@@ -51,16 +51,16 @@ function userStats(req, res, next){
 			old: []
 		}
 	};
-	db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where datetime >=now() and f.uid = (select id from hmfs where email = $1) order by datetime asc;', [email])
+	db.any('select f.id, f.title, f.datetime, f.location, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where datetime >=now() and f.uid = (select id from hmfs where email = $1) order by datetime asc;', [email])
 	.then( (upcoming)=> {
 		stats.host.upcoming = upcoming;
-		return db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where datetime < now() and f.uid = (select id from hmfs where email = $1) order by datetime desc;', [email]);
+		return db.any('select f.id, f.title, f.datetime, f.location, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where datetime < now() and f.uid = (select id from hmfs where email = $1) order by datetime desc;', [email]);
 	}).then ( (old)=> {
 		stats.host.old = old;
-		return db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where f.datetime >= now() and f.id in (select fid from hostfeast where uid = (select id from hmfs where email = $1)) order by f.datetime asc', [email]);
+		return db.any('select f.id, f.title, f.datetime, f.location, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where f.datetime >= now() and f.id in (select fid from hostfeast where uid = (select id from hmfs where email = $1)) order by f.datetime asc', [email]);
 	}).then ((upcoming)=>{
 		stats.guest.upcoming = upcoming;
-		return db.any('select f.id, f.title, f.datetime, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where f.datetime < now() and f.id in (select fid from hostfeast where uid = (select id from hmfs where email = $1)) order by f.datetime desc', [email]);
+		return db.any('select f.id, f.title, f.datetime, f.location, f.noofguest, (select count(*) from hostfeast where fid =f.id) joined from feasts f where f.datetime < now() and f.id in (select fid from hostfeast where uid = (select id from hmfs where email = $1)) order by f.datetime desc', [email]);
 	}).then ((old)=>{
 		stats.guest.old = old;
 		return res.status(200).json({
