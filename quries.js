@@ -246,7 +246,7 @@ function getOneHost(req, res, next){
 		}
 		response.canjoin = false;
 		response.hasjoined = false;
-
+ 
 		response.guests = guests;
 			return res.status(200).json({
 				success: true,
