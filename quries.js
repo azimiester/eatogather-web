@@ -221,10 +221,8 @@ function getOneHost(req, res, next){
 	}
 	var token = statics.getToken(email);
 	var response = {};
-	db.one('select f.id, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, h.id as userid, h.firstname, h.lastname, h.email from feasts f, hmfs h where f.id=$1 and h.id = f.uid', [hostId])
+	db.one('select f.id, f.description, f.title, f.location, f.tags, f.created_at, f.datetime, f.noofguest, (select id from hmfs where email = $2) as userid, h.firstname, h.lastname, h.email from feasts f, hmfs h where f.id=$1 and h.id = f.uid', [hostId, email])
 	.then((hf)=>{
-		console.log(hf);
-		console.log('-----'+hostId);
 		response = hf;
 		return db.one('select (select count(*) from hostfeast where fid=$1) as joining, (select count(*) from hostfeast where fid=$1 and uid=$2) as joined', [hostId, hf.userid]);
 	})
