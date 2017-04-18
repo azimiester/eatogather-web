@@ -227,9 +227,12 @@ function getOneHost(req, res, next){
 		return db.one('select (select count(*) from hostfeast where fid=$1) as joining, (select count(*) from hostfeast where fid=$1 and uid=$2) as joined', [hostId, hf.userid]);
 	})
 	.then(hf=>{
+		console.log(hf);
+
 		response.joining = hf.joining;
 		response.ishost = response.email === email;
 		if (response.email != email){
+			console.log("not a host");
 			delete response.email;
 			response.canjoin = parseInt(hf.joining) < parseInt(response.noofguest) && parseInt(hf.joined) == 0;
 			response.hasjoined = parseInt(hf.joined) == 1;
