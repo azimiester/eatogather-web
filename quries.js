@@ -116,7 +116,7 @@ function removeJoin(req, res, next){
 			    	message: 'You cant do this dude'
 				});		
 			}
-			db.result('delete from hostfeast where fid=$1 and uid=$2', [hostId, uid])
+			db.result('delete from hostfeast where fid=$1 and uid=$2', [hostId, uid]).
 			then((result)=> {
 				var success = result.rowCount == 1;
 				var message = !success ? 'user hasnt joined' : 'removed';
